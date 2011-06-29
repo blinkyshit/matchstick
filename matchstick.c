@@ -17,10 +17,10 @@ int       clockPin = 8;  // PB0
 int       dataPin = 11;  // PB3
 int       latchPin = 12; // PB4
 
-volatile uint8_t done = 0;
-volatile uint8_t count = 0;
+volatile uint8_t  done = 0;
+volatile uint16_t count = 0;
 
-#define MAX_COUNT 16
+#define MAX_COUNT 350
 
 ISR (TIMER2_OVF_vect)
 {
@@ -45,6 +45,7 @@ void clear_done(void)
 {
     cli();
     done = 0;
+    count = 0;
     sei();
 }
 
@@ -60,6 +61,11 @@ void setup()
     TCCR2B |= _BV(CS22) | _BV(CS21) | _BV(CS20);
 	TCNT2 = 0;
     TIMSK2 |= _BV(TOIE2);
+}
+
+uint8_t mayhem(uint8_t v)
+{
+    return rand() / (RAND_MAX / v + 1);
 }
 
 // shift 32 bits into74HC595 chain, MSB first
@@ -262,7 +268,7 @@ void random_fill(void)
             while (1)
             {
                 old = out;
-                out |= (1 << (random() % 16));
+                out |= (1 << (mayhem(16)));
                 if (old != out)
                     break;
             }
@@ -276,7 +282,7 @@ void random_fill(void)
             while (1)
             {
                 old = out;
-                out &= ~(1 << (random() % 16));
+                out &= ~(1 << (mayhem(16)));
                 if (old != out)
                     break;
             }
@@ -413,43 +419,54 @@ int main(void)
     for (;;i++)
     {
         //switch (i++)
-        switch (random() % 12)
+        switch (mayhem(23))
         {
             case 0:
-                morse();
-                break;
             case 1:
-                spiral();
+                untz_untz();
                 break;
             case 2:
-                seizure();
-                break;
             case 3:
-                line_up_down();
+                spiral();
                 break;
             case 4:
-                line_round();
-                break;
             case 5:
-                random_fill();
+                seizure();
                 break;
             case 6:
-                up_down();
-                break;
             case 7:
-                rows_up();
+                line_up_down();
                 break;
             case 8:
-                row_fill();
-                break;
             case 9:
-                white_noise();
+                line_round();
                 break;
             case 10:
+            case 11:
+                random_fill();
+                break;
+            case 12:
+            case 13:
+                up_down();
+                break;
+            case 14:
+            case 15:
+                rows_up();
+                break;
+            case 16:
+            case 17:
+                row_fill();
+                break;
+            case 18:
+            case 19:
+                white_noise();
+                break;
+            case 20:
+            case 21:
                 linear();
                 break;
-            case 11:
-                untz_untz();
+            case 22:
+                morse();
                 break;
         }
         clear_done();
