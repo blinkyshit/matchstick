@@ -10,6 +10,8 @@
 #define cbi(a, b) ((a) &= ~(1 << (b)))    //clears bit B in variable A
 #define tbi(a, b) ((a) ^= 1 << (b))       //toggles bit B in variable A
 
+char morse1[] PROGMEM = ".-.. ..- -. .- .-. ...- .. .-.. .-.. . ";
+
 // set up pins connected to 74HC595 chain
 int       clockPin = 8;  // PB0
 int       dataPin = 11;  // PB3
@@ -77,6 +79,54 @@ void shift_out(unsigned long data)
     }
     sbi(PORTB, 4);
     cbi(PORTB, 4);
+}
+
+#define SHORT_DUR 30 
+#define LONG_DUR 90 
+
+void morse()
+{
+    char *PROGMEM  ptr;
+    char          ch;
+    unsigned int  delay;
+    unsigned int  led;
+    unsigned int  i;
+
+    shift_out(0);
+    for(i = 0; i < 4; i++)
+        _delay_ms(250);
+
+    for(ptr = morse1;; ptr++)
+    {
+        ch = pgm_read_byte(ptr);
+        if (!ch)
+            return;
+
+        if (ch == '-')
+           delay = LONG_DUR;
+        else
+           delay = SHORT_DUR;
+
+        if (ch == ' ')
+           led = 0;
+        else
+           led = 1;
+
+        if (led)
+            shift_out(0xFFFF);
+
+        for(i = 0; i < delay; i++)
+           _delay_ms(10);
+
+        shift_out(0);
+
+        for(i = 0; i < SHORT_DUR; i++)
+           _delay_ms(10);
+    }
+
+    shift_out(0);
+    for(i = 0; i < 4; i++)
+        _delay_ms(250);
 }
 
 void cylon(int length, int dly)
@@ -299,28 +349,35 @@ void white_noise(void)
     }
 }
 
-void crap(void)
+void untz_untz(void)
 {
-    uint16_t r;
+    uint8_t r;
 
     while(!is_done())
     {
-        for(r = 0;; r++) 
+        for(r = 0; r < 3; r++) 
         {
-            shift_out(r);
-            _delay_ms(50);
-            r = ~r;
-            shift_out(r);
-            _delay_ms(50);
-            r = ~r;
+            shift_out(0xFFFF);
+            _delay_ms(200);
+            shift_out(0);
+            _delay_ms(250);
+        }
+        for(r = 0; r < 3; r++) 
+        {
+            shift_out(0xFFFF);
+            _delay_ms(125);
+            shift_out(0);
+            _delay_ms(125);
+        }
+        for(r = 0; r < 3; r++) 
+        {
+            shift_out(0xFFFF);
+            _delay_ms(250);
+            shift_out(0);
+            _delay_ms(250);
         }
     }
 }
-
-//untz_untz
-//morse_code()
-
-#define MAX_PATTERNS 10 
 
 void flash_led(void)
 {
@@ -334,6 +391,7 @@ void flash_led(void)
         _delay_ms(100); 
     }
 }
+
 int main(void)
 {
     uint8_t i = 0;
@@ -342,10 +400,10 @@ int main(void)
     flash_led();
 
     sei();
-    if (1)
+    if (0)
         for(;;)
         {
-            binary_inversion();
+            untz_untz();
             clear_done();
         }
     else
@@ -354,10 +412,11 @@ int main(void)
     up_down();
     for (;;i++)
     {
-        switch (random() % MAX_PATTERNS)
+        //switch (i++)
+        switch (random() % 12)
         {
             case 0:
-                linear();
+                morse();
                 break;
             case 1:
                 spiral();
@@ -385,6 +444,12 @@ int main(void)
                 break;
             case 9:
                 white_noise();
+                break;
+            case 10:
+                linear();
+                break;
+            case 11:
+                untz_untz();
                 break;
         }
         clear_done();
